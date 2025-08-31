@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework_simplejwt.exceptions import TokenError
 
 from django.core.cache import cache
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -54,7 +55,7 @@ class UserAuthAPIView(APIView):
     permission_classes = [AllowAny]
 
     def get_permissions(self):
-        if self.request.method == "PUT":
+        if self.request.method == "DELETE":
             return [IsAuthenticated()]
         return super().get_permissions()
 
@@ -112,8 +113,7 @@ class UserAuthAPIView(APIView):
                 },
             },
         )
-
-    def put(self, request, *args, **kwargs):
+    def delete(self, request, *args, **kwargs):
         user = request.user
         # 캐시에 저장된 Refresh_token 삭제
         cache.delete(f"refresh_token:{user.id}")
@@ -123,5 +123,35 @@ class UserAuthAPIView(APIView):
                 "success": True,
                 "code": "OK",
                 "data": {},
+            },
+        )
+
+
+class TokenRefreshAPIView(APIView):
+    # 토큰 refresh
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        refresh = request.data.get("refresh", None)
+        if not refresh or not type(refresh) is str:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={"success": False, "code": "REFRESH_TOKEN_REQUIRED", "data": {}},
+            )
+
+        try:
+            refresh_token = RefreshToken(refresh)
+        except (TokenError):
+            return Response(
+                status=status.HTTP_401_UNAUTHORIZED,
+                data={"success": False, "code": "INVALID_REFRESH_TOKEN", "data": {}},
+            )
+
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                "success": True,
+                "code": "OK",
+                "data": {"access_token": str(refresh_token.access_token)},
             },
         )
