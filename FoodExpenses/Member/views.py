@@ -75,7 +75,7 @@ class UserAuthAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 data={
                     "success": False,
-                    "code": "USER_NOT_FOUND",
+                    "code": "INVALID_CREDENTIALS",
                     "data": {},
                 }
             )
@@ -86,7 +86,7 @@ class UserAuthAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 data={
                     "success": False,
-                    "code": "PASSWORD_NOT_MATCH",
+                    "code": "INVALID_CREDENTIALS",
                     "data": {},
                 }
             )
@@ -94,8 +94,6 @@ class UserAuthAPIView(APIView):
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
         refresh_token = str(refresh)
-        # 캐시에 Refresh_token 저장
-        cache.set(key=f"refresh_token:{user.id}", value=refresh_token, timeout=7 * 24 * 3600)
 
         return Response(
             status=status.HTTP_200_OK,
