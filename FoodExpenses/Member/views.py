@@ -1,11 +1,11 @@
 from django.contrib.auth.hashers import check_password
-from django.core.cache import cache
 from django.db import IntegrityError, transaction
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
@@ -106,17 +106,16 @@ class UserAuthAPIView(APIView):
                 },
             },
         )
+
     def delete(self, request, *args, **kwargs):
-        user = request.user
-        # 캐시에 저장된 Refresh_token 삭제
-        cache.delete(f"refresh_token:{user.id}")
+        # 로그아웃 시 유저의 모든 리프레시 토큰 무효화
+        tokens = OutstandingToken.objects.filter(user=request.user.id)
+        for t in tokens:
+            BlacklistedToken.objects.get_or_create(token=t)
+
         return Response(
             status=status.HTTP_200_OK,
-            data={
-                "success": True,
-                "code": "OK",
-                "data": {},
-            },
+            data={"success": True, "code": "OK", "data": {}},
         )
 
 
