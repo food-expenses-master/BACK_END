@@ -124,26 +124,52 @@ class TokenRefreshAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        refresh = request.data.get("refresh", None)
-        if not refresh or not type(refresh) is str:
+        refresh = request.data.get("refresh_token", None)
+        if not refresh or  not isinstance(refresh, str):
             return Response(
                 status=status.HTTP_400_BAD_REQUEST,
                 data={"success": False, "code": "REFRESH_TOKEN_REQUIRED", "data": {}},
             )
 
+        # refresh 토큰 검증
         try:
-            refresh_token = RefreshToken(refresh)
-        except (TokenError):
+            old_refresh = RefreshToken(refresh)
+        except TokenError:
             return Response(
                 status=status.HTTP_401_UNAUTHORIZED,
                 data={"success": False, "code": "INVALID_REFRESH_TOKEN", "data": {}},
             )
+
+        # refresh 토큰 블랙리스트 등록
+        try:
+            old_refresh.blacklist()
+        except Exception:
+            return Response(
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                data={"success": False, "code": "SERVER_ERROR", "data": {}},
+            )
+
+        user_pk = old_refresh.payload.get("user_id")
+        try:
+            user = User.objects.get(id=user_pk)
+        except User.DoesNotExist:
+            return Response(
+                status=status.HTTP_401_UNAUTHORIZED,
+                data={"success": False, "code": "INVALID_REFRESH_TOKEN", "data": {}},
+            )
+
+        # 새 refresh 발급 및 access 동시 발급
+        new_refresh = RefreshToken.for_user(user)
+        new_access = str(new_refresh.access_token)
 
         return Response(
             status=status.HTTP_200_OK,
             data={
                 "success": True,
                 "code": "OK",
-                "data": {"access_token": str(refresh_token.access_token)},
+                "data": {
+                    "access_token": new_access,
+                    "refresh_token": str(new_refresh),
+                },
             },
         )
