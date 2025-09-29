@@ -1,19 +1,19 @@
-from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework_simplejwt.exceptions import TokenError
-
 from django.core.cache import cache
+from django.db import IntegrityError, transaction
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from .models import User
 
 
 class UserRegisterAPIView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request, *args, **kwargs):
         nickname = request.data.get("nickname", None)
         password = request.data.get("password", None)
@@ -29,20 +29,15 @@ class UserRegisterAPIView(APIView):
             )
 
         try:
-            User = get_user_model()
-            User.objects.create_user()
-        except:
-            # User nickname이 중복된 경우
+            with transaction.atomic():
+                User.objects.create_user(nickname=nickname, password=password)
+        except IntegrityError:
             return Response(
-                status=status.HTTP_400_BAD_REQUEST,
-                data={
-                    "success": False,
-                    "code": "DUPLICATE_NICKNAME",
-                    "data": {},
-                },
+                status=status.HTTP_409_CONFLICT,
+                data={"success": False, "code": "DUPLICATE_NICKNAME", "data": {}},
             )
         return Response(
-            status=status.HTTP_200_OK,
+            status=status.HTTP_201_CREATED,
             data={
                 "success": True,
                 "code": "OK",
