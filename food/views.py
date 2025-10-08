@@ -24,7 +24,7 @@ class FoodListGenericAPIView(GenericAPIView, ListModelMixin):
         if sales_type:
             sales_type = SalesType.from_label(sales_type)
             # 유효하지 않은 값이면 400 코드와 에러 응답 반환
-            if not SalesType:
+            if not sales_type:
                 raise ValidationError("WRONG_SALES_TYPE")
             qs = qs.filter(sales_type=sales_type)
 
