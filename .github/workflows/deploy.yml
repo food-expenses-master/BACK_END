@@ -1,41 +1,44 @@
-name: Deploy to EC2 on main
+name: Deploy to EC2
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Add SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
-
-      - name: Trust EC2 host
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Remote deploy
+      - name: Deploy to EC2
         env:
-          PROJECT_DIR: ${{ secrets.PROJECT_DIR }}
           DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DJANGO_DEBUG: ${{ secrets.DJANGO_DEBUG }}
           DJANGO_ALLOWED_HOSTS: ${{ secrets.DJANGO_ALLOWED_HOSTS }}
           REDIS_HOST: ${{ secrets.REDIS_HOST }}
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
+          REDIS_DB: ${{ secrets.REDIS_DB }}
         run: |
-          ssh -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "\
-            export DJANGO_SECRET_KEY='${DJANGO_SECRET_KEY}' \
-                   DATABASE_URL='${DATABASE_URL}' \
-                   DJANGO_ALLOWED_HOSTS='${DJANGO_ALLOWED_HOSTS}' \
-                   REDIS_HOST='${REDIS_HOST}' \
-                   REDIS_PORT='${REDIS_PORT}'; \
-            bash -lc 'bash ${PROJECT_DIR}/deploy.sh' \
-          "
+          ssh -i ~/.ssh/github_actions_ed25519 -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          set -e
+          echo "[deploy] running at $(date '+%Y-%m-%d %H:%M:%S')"
+          cd ${{ secrets.PROJECT_DIR }}/repo
+          git pull origin main
+          source ../.venv/bin/activate
+          echo "[deploy] writing .env file..."
+          cat > .env <<EOT
+          DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+          DATABASE_URL=${DATABASE_URL}
+          DJANGO_DEBUG=${DJANGO_DEBUG}
+          DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+          REDIS_HOST=${REDIS_HOST}
+          REDIS_PORT=${REDIS_PORT}
+          REDIS_DB=${REDIS_DB}
+          EOT
+          python manage.py check
+          python manage.py migrate --noinput
+          python manage.py collectstatic --noinput
+          EOF
