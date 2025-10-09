@@ -23,8 +23,19 @@ jobs:
           ssh-keyscan -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Remote deploy
-        run: |
-          ssh -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "bash -lc 'bash ${PROJECT_DIR}/deploy.sh'"
         env:
           PROJECT_DIR: ${{ secrets.PROJECT_DIR }}
+          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DJANGO_ALLOWED_HOSTS: ${{ secrets.DJANGO_ALLOWED_HOSTS }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+        run: |
+          ssh -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "\
+            export DJANGO_SECRET_KEY='${DJANGO_SECRET_KEY}' \
+                   DATABASE_URL='${DATABASE_URL}' \
+                   DJANGO_ALLOWED_HOSTS='${DJANGO_ALLOWED_HOSTS}' \
+                   REDIS_HOST='${REDIS_HOST}' \
+                   REDIS_PORT='${REDIS_PORT}'; \
+            bash -lc 'bash ${PROJECT_DIR}/deploy.sh' \
+          "
