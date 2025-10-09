@@ -1,8 +1,8 @@
-name: Deploy to EC2
+name: Deploy to EC2 on main
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
   deploy:
@@ -12,8 +12,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to EC2
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Trust EC2 host
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Remote deploy
         env:
+          PROJECT_DIR: ${{ secrets.PROJECT_DIR }}
           DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DJANGO_DEBUG: ${{ secrets.DJANGO_DEBUG }}
@@ -22,23 +33,13 @@ jobs:
           REDIS_PORT: ${{ secrets.REDIS_PORT }}
           REDIS_DB: ${{ secrets.REDIS_DB }}
         run: |
-          ssh -i ~/.ssh/github_actions_ed25519 -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e
-          echo "[deploy] running at $(date '+%Y-%m-%d %H:%M:%S')"
-          cd ${{ secrets.PROJECT_DIR }}/repo
-          git pull origin main
-          source ../.venv/bin/activate
-          echo "[deploy] writing .env file..."
-          cat > .env <<EOT
-          DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-          DATABASE_URL=${DATABASE_URL}
-          DJANGO_DEBUG=${DJANGO_DEBUG}
-          DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
-          REDIS_HOST=${REDIS_HOST}
-          REDIS_PORT=${REDIS_PORT}
-          REDIS_DB=${REDIS_DB}
-          EOT
-          python manage.py check
-          python manage.py migrate --noinput
-          python manage.py collectstatic --noinput
-          EOF
+          ssh -p ${{ secrets.EC2_PORT }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "\
+            export DJANGO_SECRET_KEY='${DJANGO_SECRET_KEY}' \
+                   DATABASE_URL='${DATABASE_URL}' \
+                   DJANGO_DEBUG='${DJANGO_DEBUG}' \
+                   DJANGO_ALLOWED_HOSTS='${DJANGO_ALLOWED_HOSTS}' \
+                   REDIS_HOST='${REDIS_HOST}' \
+                   REDIS_PORT='${REDIS_PORT}' \
+                   REDIS_DB='${REDIS_DB}'; \
+            bash -lc 'bash ${PROJECT_DIR}/deploy.sh' \
+          "
