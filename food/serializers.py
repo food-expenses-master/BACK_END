@@ -3,6 +3,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from food.models import Food
+from food.service import format_collected_day
 
 
 # FoodListSerializer:
@@ -31,20 +32,4 @@ class FoodListSerializer(serializers.ModelSerializer):
 
     # collected_date 기준으로 '당일 / n일전 / 1주일전' 등의 상대 날짜(day) 표시
     def get_day(self, obj):
-        now = timezone.now().date()
-        diff = (now - obj.collected_date).days
-
-        if diff < 1:
-            label = "당일"
-        elif diff < 7:
-            label = f"{diff}일전"
-        elif diff == 7:
-            label = "1주일전"
-        elif diff < 15:
-            label = "2주일전"
-        elif diff < 32:
-            label = "1개월전"
-        else:
-            label = "일년전"
-
-        return f"{label} ({obj.collected_date.month}/{obj.collected_date.day})"
+        return format_collected_day(obj.collected_date)
