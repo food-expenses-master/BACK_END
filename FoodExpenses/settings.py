@@ -14,12 +14,8 @@ from datetime import timedelta
 
 from pathlib import Path
 import os
-from pathlib import Path
 from dotenv import load_dotenv
-import os, dj_database_url
-
-import redis
-
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,14 +24,14 @@ load_dotenv(BASE_DIR / ".env")
 DJANGO_ENV = os.getenv("DJANGO_ENV", "local")
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() in ("1", "true", "yes", "on")
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only")
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if h.strip()]
-
+ALLOWED_HOSTS = [
+    h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",") if h.strip()
+]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -49,7 +45,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
-    "Member"
+    "Member",
+    "food",
 ]
 
 MIDDLEWARE = [
@@ -81,16 +78,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "FoodExpenses.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": dj_database_url.parse(
-        os.getenv("DATABASE_URL")
-    )
-}
-
+DATABASES = {"default": dj_database_url.parse(os.getenv("DATABASE_URL"))}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -110,7 +101,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -121,7 +111,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -155,9 +144,9 @@ SIMPLE_JWT = {
 }
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
 }
 
-AUTH_USER_MODEL = "Member.User"
+APPEND_SLASH = False
