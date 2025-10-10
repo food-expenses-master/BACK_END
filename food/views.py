@@ -92,14 +92,14 @@ class FoodDetailAPIView(APIView):
         price_by_type = {row["sales_type"]: row for row in foods}
         whole = price_by_type.get(SalesType.WHOLE, {})
         retail = price_by_type.get(SalesType.RETAIL, {})
-        wholesale_day= whole.get("collected_date") or None
-        retail_day = retail.get("collected_date") or None
+        wholesale_day = whole.get("collected_date")
+        retail_day = retail.get("collected_date")
 
         food_data = {
             "item_name": food.item_name,
             "wholesale_price": whole.get("price") or 0,
             "wholesale_price_change_rate": whole.get("price_change_rate") or "-",
-            "wholesale_day" : format_collected_day(wholesale_day) if wholesale_day else "-",
+            "wholesale_day": format_collected_day(wholesale_day) if wholesale_day else "-",
             "retail_price": retail.get("price") or 0,
             "retail_price_change_rate": retail.get("price_change_rate") or "-",
             "retail_day": format_collected_day(retail_day) if retail_day else "-",
