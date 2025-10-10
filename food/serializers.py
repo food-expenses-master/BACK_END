@@ -47,4 +47,4 @@ class FoodListSerializer(serializers.ModelSerializer):
         else:
             label = "일년전"
 
-        return f"{label} ({obj.collected_date.month}/{obj.collected_date.day})"
+        return f"{label} · ({obj.collected_date.month}/{obj.collected_date.day})"
