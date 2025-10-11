@@ -17,3 +17,13 @@ class Food(models.Model):
     region = models.CharField(choices=RegionType, max_length=20)
     price_change_rate = models.CharField(max_length=10, blank=True, null=True)
     sales_type = models.CharField(choices=SalesType, max_length=10)
+
+
+class Store(models.Model):
+    name = models.CharField(max_length=20)
+    number = models.CharField(max_length=20)
+    business_info = models.CharField(max_length=100)
+    image = models.URLField(max_length=150)
+    address_link = models.URLField(max_length=150)
+    address = models.CharField(max_length=50)
+    food_category = models.JSONField(default=list)
