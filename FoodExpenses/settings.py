@@ -153,7 +153,7 @@ APPEND_SLASH = False
 
 CORS_ALLOWED_ORIGINS = [
     "https://tem-front-end.vercel.app",
-]
+    "http://localhost:3000", ]
 
 CORS_ALLOW_CREDENTIALS = True
 SESSION_COOKIE_SAMESITE = "None"
