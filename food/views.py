@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 
 from food.serializers import FoodListSerializer
 from food.choices import FoodType, SalesType, RegionType
-from food.models import Food, Store,
+from food.models import Food, Store
 from food.service import format_collected_day
 
 
