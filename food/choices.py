@@ -16,6 +16,12 @@ class FoodType(models.TextChoices):
     FRUIT_AND_VEGETABLE = "fruit/vegetable", "과채류"
 
 
+    # 타입명 -> 코드로 변환용 함수
+    @classmethod
+    def from_label(cls, label):
+        return next((c.value for c in cls if c.label == label), None)
+
+
 # RegionType: 지역을 코드로 관리하기 위한 enum 클래스
 class RegionType(models.TextChoices):
     ALL = "0000", "전체"
