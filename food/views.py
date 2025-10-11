@@ -6,7 +6,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from food.serializers import FoodListSerializer
-from food.choices import SalesType, RegionType
+from food.choices import FoodType, SalesType, RegionType
 from food.models import Food
 
 
@@ -21,6 +21,7 @@ class FoodListGenericAPIView(GenericAPIView, ListModelMixin):
         qs = super().get_queryset()
         sales_type = self.request.query_params.get("sales_type", None)
         region = self.request.query_params.get("region", None)
+        category = self.request.query_params.get("category", None)
 
         # sales_type(판매유형), region(지역) 쿼리파라미터로 필터링
         if sales_type:
@@ -29,6 +30,12 @@ class FoodListGenericAPIView(GenericAPIView, ListModelMixin):
             if not sales_type:
                 raise ValidationError("WRONG_SALES_TYPE")
             qs = qs.filter(sales_type=sales_type)
+
+        if category:
+            category_code = FoodType.from_label(category)
+            if not category_code:
+                raise ValidationError("WRONG_FOOD_TYPE")
+            qs = qs.filter(category=category_code)
 
         region_code = "0000"
         if region:
