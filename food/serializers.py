@@ -1,5 +1,3 @@
-from django.utils import timezone
-
 from rest_framework import serializers
 
 from food.models import Food
@@ -24,6 +22,7 @@ class FoodListSerializer(serializers.ModelSerializer):
             "price_change_rate",
             "rank",
             "unit",
+            "kind_name",
             "day",
             "category",
             "sales_type",
